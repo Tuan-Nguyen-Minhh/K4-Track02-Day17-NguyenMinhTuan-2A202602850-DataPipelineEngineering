@@ -7,7 +7,7 @@ Phần phân tích tối đa một trang, không tính output ở phần 5.
 
 **Repo: https://github.com/Tuan-Nguyen-Minhh/K4-Track02-Day17-NguyenMinhTuan-2A202602850-DataPipelineEngineering**
 
-**Commit bài nộp:**
+**Commit bài nộp: `14d2872052a6c5ea2f9d801fb145a21d00fde1ac`** (nhánh `main`, commit sửa ba lỗi ở `pipeline/` + `submission/`; commit này chỉ bổ sung ô hash này)
 
 **AI đã dùng và phạm vi hỗ trợ (hoặc không dùng):** Gemini, Qwen và OpenCode — dùng để đọc
 code và giải thích log, gợi ý nguyên nhân và soạn văn bản REPORT. Toàn bộ thay đổi mã nguồn
