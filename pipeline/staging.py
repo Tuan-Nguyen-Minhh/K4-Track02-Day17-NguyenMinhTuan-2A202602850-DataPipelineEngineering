@@ -33,14 +33,22 @@ def ticket_changes_sql(upto: str | None = None, batch: str | None = None) -> str
 
     `upto`  -> only batches landed on or before that day (as-of / time travel)
     `batch` -> only that day's batch (what a daily incremental run sees)
+
+    The key of a change is NOT always in `after`: Debezium sends op='d' with
+    `after = null` (only `before` holds the row that disappeared), and a Kafka
+    tombstone has `value = null` at all — that one carries no change, so it is
+    filtered out on `_op IS NULL` instead of being read as a delete.
     """
     return f"""
     SELECT * FROM (
         SELECT
-            j->'value'->'after'->>'ticket_id'                       AS ticket_id,
+            coalesce(j->'value'->'after'->>'ticket_id',
+                     j->'value'->'before'->>'ticket_id')            AS ticket_id,
             _op,
             (j->'value'->'source'->>'lsn')::BIGINT                  AS _lsn,
             make_timestamp((j->'value'->'source'->>'ts_ms')::BIGINT * 1000) AS _changed_at,
+            -- For op = 'd' the row is gone, so `after` is null and every column
+            -- below is null too: a delete carries the key + LSN, never the PII.
             j->'value'->'after'->>'user_id'                         AS user_id,
             j->'value'->'after'->>'subject'                         AS subject,
             j->'value'->'after'->>'body'                            AS body,
@@ -55,7 +63,7 @@ def ticket_changes_sql(upto: str | None = None, batch: str | None = None) -> str
         FROM (SELECT *, _payload::JSON AS j FROM {bronze_scan('tickets')} {_where(upto, batch)})
         WHERE _op IS NOT NULL            -- Kafka tombstone (value = null): nothing changed
     )
-    WHERE ticket_id IS NOT NULL
+    WHERE ticket_id IS NOT NULL           -- malformed record: no key in before nor after
     """
 
 
